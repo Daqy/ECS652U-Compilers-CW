@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# $testfile $results_outdir $results_refdir $BUILD_DIR $REF_DIR
+
+testfile=$1
+results_outdir=$2
+results_refdir=$3
+BUILD_DIR=$4
+REF_DIR=$5
+
+outname=`basename $testfile`.out
+
+coolspim -file $BUILD_DIR/stack.s < $testfile > $results_outdir/$outname
+coolspim -file $REF_DIR/stack.s < $testfile > $results_refdir/$outname
+t=`uname -s`
+if [ "$t" = "Linux" ] ; then
+    sed ':begin;$!N;s/Increasing heap...\n//;tbegin;P;D' $results_outdir/$outname | sed '$d' | sed '$d' >  $results_outdir/$outname.filtered
+    sed ':begin;$!N;s/Increasing heap...\n//;tbegin;P;D' $results_refdir/$outname | sed '$d' | sed '$d' >  $results_refdir/$outname.filtered
+else
+    sed ':begin;$!N;s/Increasing heap...\n//;tbegin;P;D' $results_outdir/$outname >  $results_outdir/$outname.filtered
+    sed ':begin;$!N;s/Increasing heap...\n//;tbegin;P;D' $results_refdir/$outname >  $results_refdir/$outname.filtered
+fi
+diff -B -w $results_refdir/$outname.filtered $results_outdir/$outname.filtered
+

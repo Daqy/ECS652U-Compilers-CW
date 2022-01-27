@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# $testfile $results_outdir $results_refdir $BUILD_DIR $REF_DIR $component
+
+testfile=$1
+results_outdir=$2
+results_refdir=$3
+BUILD_DIR=$4
+REF_DIR=$5
+component=$6
+
+# TODO: add timeouts
+
+outname=`basename $testfile`.out
+errname=`basename $testfile`.err
+
+coolc -o $results_refdir/$outname $testfile 2>  $results_refdir/$errname
+refrc=$?
+./mybackend -o $results_outdir/$outname $testfile 2>  $results_outdir/$errname
+myrc=$?
+
+diff $results_refdir/$outname $results_outdir/$outname
+outdiffrc=$?
+
+diff $results_refdir/$errname $results_outdir/$errname
+errdiffrc=$?
+
+spim_outname=`basename $testfile`.spim.out
+spim_errname=`basename $testfile`.spim.err
+filter="sed -f `which filter`"
+
+coolspim -file $results_refdir/$outname >  $results_refdir/$spim_outname 2>  $results_refdir/$spim_errname
+spim_refrc=$?
+coolspim -file $results_outdir/$outname > $results_outdir/$spim_outname  2>  $results_outdir/$spim_errname
+spim_myrc=$?
+
+diff $results_refdir/$spim_outname $results_outdir/$spim_outname
+spim_outdiffrc=$?
+if [ $spim_outdiffrc -ne 0 ] ; then
+    $filter $results_refdir/$spim_outname > $results_refdir/$spim_outname.filtered
+    $filter $results_outdir/$spim_outname > $results_outdir/$spim_outname.filtered
+    diff $results_refdir/$spim_outname.filtered $results_outdir/$spim_outname.filtered
+    spim_outdiffrc=$?
+fi
+
+diff $results_refdir/$spim_errname $results_outdir/$spim_errname
+spim_errdiffrc=$?
+
+
+if [ $refrc -eq 0 ] && [ $myrc -eq 0 ] ; then
+    if [ $errdiffrc -ne 0 ] ; then
+        exit 1
+    else
+        # do not check $outdiffrc
+        # generated code need not be identical
+        # test the generated code instead
+        if [ $spim_refrc -eq 0 ] && [ $spim_myrc -eq 0 ] ; then
+            if [ $spim_errdiffrc -ne 0 ] ; then
+                exit 1
+            else
+                exit $spim_outdiffrc
+            fi
+        elif [ $spim_refrc -ne 0 ] && [ $spim_myrc -ne 0 ] ; then
+            exit $spim_errdiffrc
+        else
+            exit 1
+        fi
+    fi
+elif [ $refrc -ne 0 ] && [ $myrc -ne 0 ] ; then
+    exit $errdiffrc
+else
+    exit 1
+fi
+
+exit 1

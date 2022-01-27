@@ -1,0 +1,28 @@
+README file for Programming Assignment 3: Backend
+=======================================================
+
+You main modify any files that match the following pattern:
+src/Cgen*.java
+
+You can obtain a working code generator by filling in code in all
+the places marked by  /* TODO */
+
+
+Instructions
+------------
+
+        To compile your code generator type:
+
+	buildme backend
+
+	To test it, type:
+
+	./mybackend -o foo.s foo.cl
+
+	To run the produced code:
+
+	% coolspim -file foo.s
+
+	To run regression tests, type
+
+        % testme cgen

@@ -1,0 +1,134 @@
+#!/bin/bash
+
+#set -v 
+#set -x
+set -u
+set -o pipefail
+
+COOL_DIR=`dirname $0`/..
+COOL_DIR=`(cd $COOL_DIR; pwd)`
+BUILD_DIR=`pwd`
+SRC_DIR=$COOL_DIR/src
+REF_DIR=$COOL_DIR/../ref
+MARKS_FILE=$COOL_DIR/../summary-marks.csv
+
+
+if [ $BUILD_DIR = $COOL_DIR ]; then
+    echo Cannot run tests in $COOL_DIR
+    exit 1
+fi
+
+if [ $# -lt 1 ]; then
+    echo Missing arguments. Specify what to test.
+    echo Usage: 
+    echo $0 stack lexer parser semant cgen
+    exit 1
+fi
+
+err=0
+
+echo START test components: $@
+
+for component in "$@"; do
+
+    component_dir="testsuite/$component"
+    testdir="$COOL_DIR/$component_dir"
+    resultdir="$BUILD_DIR/$component_dir"
+    results_outdir="$resultdir/out"
+    results_refdir="$resultdir/ref"
+
+    rm -f $resultdir/summary.log
+    mkdir -p $resultdir
+    touch $resultdir/summary.log
+    exec > >(tee -i $resultdir/summary.log)
+
+    echo Testing $component 
+    echo Testsuite in $testdir
+    echo Results in $resultdir
+
+    if [ -f $MARKS_FILE ] ; then
+        echo "Final mark in $MARKS_FILE"
+    fi
+
+    if [ -d $results_outdir ]; then
+        echo "Results directory exists and will be overwritten."
+        rm -f $resultdir/build.log $resultdir/test.log
+    else
+        mkdir -p $results_outdir $results_refdir
+    fi
+    touch $resultdir/test.log
+
+    if [ -d  $testdir ] ; then
+        component_buildtest=$COOL_DIR/bin/testscripts/$component/buildtest
+
+        if [ -f $component_buildtest ]; then
+            echo Building $component using $component_buildtest
+            (exec > $resultdir/build.log 2>&1 ; bash -x $component_buildtest $BUILD_DIR $SRC_DIR $component)
+            if [ $? -ne 0 ]; then
+                echo ERROR: Build failed. See $resultdir/build.log
+                err=$(( $err + 1 ))
+                if [ -f $MARKS_FILE ] ; then
+                    printf ",0,," >> $MARKS_FILE
+                fi
+                continue
+            else
+                if [ -f $MARKS_FILE ] ; then
+                    printf ",1" >> $MARKS_FILE
+                fi
+            fi
+        else
+            echo Cannot find $component_buildtest
+            continue
+        fi
+
+        component_runtest=$COOL_DIR/bin/testscripts/$component/runtest
+
+        if [ -f $component_runtest ]; then
+            echo Testing $component using $component_runtest
+        else
+            echo Cannot find $component_runtest
+            continue
+        fi
+
+        testfiles=`ls $testdir/* | grep -v runtest | grep -v buildtest`
+
+        # todo add all files from examples  directory to testfiles
+
+        pass=0
+        total=0
+
+        for testfile in $testfiles; do
+            testname="$component_dir/`basename $testfile`"
+            #echo Testing $testname
+            (exec >> $resultdir/test.log 2>&1 ; bash -x $component_runtest $testfile $results_outdir $results_refdir $BUILD_DIR $REF_DIR $component)
+            if [ $? -eq 0 ]; then
+               echo PASS: $testname | tee -a $resultdir/test.log
+               pass=$(( $pass + 1 ))
+            else
+               echo FAIL: $testname | tee -a $resultdir/test.log
+            fi
+            total=$(( $total + 1 ))
+
+        done
+        echo Passed $pass of $total tests for $component
+
+        if [ -f $MARKS_FILE ] ; then
+            printf ",$pass,$total" >> $MARKS_FILE
+        fi
+        if [ $pass -lt $total ]; then
+            echo See $resultdir/test.log
+        fi
+    else
+        echo Cannot find directory $testdir
+    fi
+done
+
+
+if [ $err -eq 0 ]; then
+    echo DONE
+else
+    echo Errors: $err
+fi
+
+#set +v
+#set +x

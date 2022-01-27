@@ -1,0 +1,103 @@
+README file for Programming Assignment 2: Semantic Analysis
+===========================================================
+
+Your directory should now contain the following new files:
+
+ assignments/pa2/README
+ assignments/pa2/bad.cl
+ assignments/pa2/good.cl
+ src/ClassTable.java
+ src/SymbolTable.java
+ src/SymtabExample.java
+ src/ScopeCheckingVisitor.java
+ src/TypeCheckingVisitor.java
+ src/Semant.java
+ src/Analysis.java
+ src/ast/parser/ASTLexer.g4
+ src/ast/parser/ASTParser.g4
+ src/ASTRebuilder.java
+
+
+ README this file. It contains detailed instructions for the assignment as well
+   as a number of useful tips.  It is part of the assignment to clearly and
+   concisely document your design.  You should explain design decisions, how
+   your code is structured, and why you believe that the design is a good one
+   (i.e., why it leads to a correct and robust program), and why your code is
+   correct.  This information can be placed here in README file and/or as
+   comments in your code. This information is the major guideline we have to
+   understanding your code during code review.
+
+ good.cl and bad.cl test a few features of the semantic checker.  You should add
+   tests to ensure that good.cl exercises as many legal semantic combinations as
+   possible and that bad.cl exercises as many kinds of semantic errors as
+   possible.  It is not possible to exercise all possible bad combinations in
+   one file.
+
+ ast/*.java The ast package provides classes for abstract syntax trees, as
+   described in the previous assignment. DO NOT MODIFY.
+
+ ast/visitor/*.java The ast.visitor package provides classes for traversing
+   abstract syntax trees, using the Visitor Design Pattern. DO NOT MODIFY.
+
+ In this assignment, you will need to add new AST visitors to store, fetch, and
+ compute information about the AST. This should be done in the default package
+ files ScopeCheckingVisitor.java, TypeCheckingVisitor.java, ClassTable.java and
+ Semant.java
+
+ Semant.java is the main file for your implementation of the semantic analysis
+   phase.  It contains some symbols predefined for your convenience and a call
+   to a \C{ClassTable} implementation for building the inheritance graph.  You
+   may choose to use or modify these.  The semantic analyzer is invoked from
+   Analysis.java by calling the method analyze() with an object of class
+   ProgramNode passed as a parameter.
+
+ ClassTable.java implements a placeholder class for a few useful methods,
+   including initialization of basic classes.  Feel free to extend it to
+   implement some real data structure.  For more information about basic class
+   initialization, read the comments in ClassTable.java.
+
+ TreeConstants.java defined some useful symbol constants.  You may add some of
+   your own, if you wish.
+
+ ASTLexer.g4, ASTParser.g4 and ASTRebuilder.java implement a lexer and a parser
+   for reading text representation of ASTs from console in the format produced
+   by the parser phase. DO NOT MODIFY.
+
+ Analysis.java The main method reads an AST in text form from standard input,
+   parses it, and then calls Semant.analyze to produce a type-annotated AST on
+   standard output.  DO NOT MODIFY.
+
+ The script mysemant can pass any of the standard flags to the semantic analyzer
+   as well; for this assignment, -s (semantic analysis debug) may be useful as
+   it sets a static variable Flags.semant_debug to "true".  If you want your
+   semantic checker to print debug information when the option is set, write
+   your debug code in the following format:
+
+        if (Flags.semant_debug)
+        {
+    ...
+        }
+
+   semant_debug is provided as a convenience. You don't need to use the
+   debugging flags if you don't want to.
+
+ SymbolTable.java contains a symbol table implementation. Read the comments in
+   the file and look at the example in SymtabExample.java.  You are not required
+   to use this code, but you may find it useful. DO NOT MODIFY.
+
+Instructions
+------------
+
+  To compile your semantic analyzer program type:
+
+    buildme semant
+
+  To test your semantic checker, type:
+
+    ./mysemant foo.cl
+
+  mysemant is a version of mycoolc that omits code generation. It parses all the
+  cool files given on the command line and builds a single abstract syntax tree
+  containing all class definitions appearing in the input files. Your semantic
+  checker is then called on this abstract syntax tree.  If there are no errors,
+  the program produces a type-annotated abstract syntax tree as output.

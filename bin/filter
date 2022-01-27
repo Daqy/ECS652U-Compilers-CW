@@ -1,0 +1,5 @@
+s/^[\t ]*#[0-9][0-9]*//
+s/, line [0-9][0-9]*:/, line x:/
+s/at or near .*/at or near LOCATION/
+s/parse error/syntax error/g
+/^Stats --/,$d

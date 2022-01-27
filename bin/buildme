@@ -1,0 +1,115 @@
+#!/bin/bash
+
+#set -v
+set -x
+set -e
+set -o pipefail
+
+component="all"
+if [ "$#" -ge 1 ]; then
+    if [ "$1" = "lexer" ] ; then
+        component="frontend"
+    elif [ "$1" = "parser" ] ; then
+        component="frontend"
+    elif [ "$1" = "frontend" ] ; then
+        component=$1
+    elif [ "$1" = "semant" ] ; then
+        component=$1
+    elif [ "$1" = "cgen" ] ; then
+        component="backend"
+    elif [ "$1" = "backend" ] ; then
+        component=$1
+    else
+        echo "Unknown argument $1"
+        exit 1
+    fi
+fi
+
+COOL_DIR=`dirname $0`/..
+COOL_DIR=`(cd $COOL_DIR; pwd)`
+BUILD_DIR=`pwd`
+SRC_DIR=$COOL_DIR/src
+
+ANTLR_JAR="$COOL_DIR/lib/antlr-4.6-complete.jar"
+CLASSPATH=$ANTLR_JAR:$CLASSPATH
+
+JAVA_SRC_FILE_LIST="$SRC_DIR/ast/*.java \
+    $SRC_DIR/ast/visitor/*.java \
+    $SRC_DIR/Flags.java \
+    $SRC_DIR/Utilities.java \
+    $SRC_DIR/StringTable.java \
+    $SRC_DIR/TreeConstants.java \
+    $SRC_DIR/ASTBuilder.java \
+    $SRC_DIR/CoolErrorListener.java \
+    $SRC_DIR/CoolErrorStrategy.java \
+    $SRC_DIR/Frontend.java"
+
+if [ "$component" != "frontend" ] ; then
+    JAVA_SRC_FILE_LIST="$JAVA_SRC_FILE_LIST \
+        $SRC_DIR/SymbolTable.java \
+        $SRC_DIR/ClassTable.java \
+        $SRC_DIR/ASTRebuilder.java \
+        $SRC_DIR/TypeCheckingVisitor.java \
+        $SRC_DIR/ScopeCheckingVisitor.java \
+        $SRC_DIR/Semant.java \
+        $SRC_DIR/Analysis.java"
+fi
+
+if [ "$component" != "frontend" ] && [ "$component" != "semant" ]  ; then
+    JAVA_SRC_FILE_LIST="$JAVA_SRC_FILE_LIST \
+        $SRC_DIR/Runner.java \
+        $SRC_DIR/Cgen*.java \
+        $SRC_DIR/Backend.java"
+fi
+
+ANTLR="java -jar $ANTLR_JAR"
+
+$ANTLR -o $BUILD_DIR  -listener -visitor -lib $SRC_DIR $SRC_DIR/CoolParser.g4 $SRC_DIR/CoolLexer.g4
+
+if [ "$component" != "frontend" ]; then
+$ANTLR -o $BUILD_DIR -visitor -package ast.parser -lib $SRC_DIR/ast/parser \
+    $SRC_DIR/ast/parser/ASTParser.g4 $SRC_DIR/ast/parser/ASTLexer.g4
+fi
+
+javac -cp $CLASSPATH -d $BUILD_DIR/ $JAVA_SRC_FILE_LIST *.java 2>&1 | tee build.log
+
+if [ "$component" = "frontend" ] ; then
+    echo "java -cp .:$CLASSPATH Frontend \$@" > myfrontend
+    chmod +x myfrontend
+
+    echo "lexer \$@ | parser \$@" > reffrontend
+    chmod +x reffrontend
+
+    # ./myfrontend $COOL_DIR/examples/hello_world.cl
+fi
+
+if [ "$component" = "semant" ] ; then
+    echo "lexer \$@ | parser \$@ | java -cp .:$CLASSPATH Analysis \$@" > mysemant
+    chmod +x mysemant
+
+    echo "lexer \$@ | parser \$@ | semant" > refsemant
+    chmod +x refsemant
+
+    ./mysemant $COOL_DIR/examples/hello_world.cl
+fi
+
+if [ "$component" = "backend" ] ; then
+    echo "lexer \$@ | parser \$@ | semant \$@ | java -cp .:$CLASSPATH Backend \$@" > mybackend
+    chmod +x mybackend
+
+    ./mybackend -o hello_world.s $COOL_DIR/examples/hello_world.cl
+fi
+
+
+if [ "$component" = "all" ] ; then
+    echo "java -cp .:$CLASSPATH Runner \$@" > mycoolc
+    chmod +x mycoolc
+
+    ./mycoolc -o hello_world.s $COOL_DIR/examples/hello_world.cl
+fi
+
+
+set +o pipefail
+set +e
+set +x
+#set +v

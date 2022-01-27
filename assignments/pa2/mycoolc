@@ -1,0 +1,2 @@
+#!/bin/bash
+lexer $* | parser $* | ./mysemant $* | cgen $* 

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# $testfile $results_outdir $results_refdir $BUILD_DIR $REF_DIR $component
+
+testfile=$1
+results_outdir=$2
+results_refdir=$3
+BUILD_DIR=$4
+REF_DIR=$5
+component=$6
+
+# TODO: add timeouts
+
+outname=`basename $testfile`.out
+errname=`basename $testfile`.err
+
+lexer $testfile >  $results_refdir/$outname 2>  $results_refdir/$errname
+refrc=$?
+./myfrontend -x $testfile > $results_outdir/$outname  2>  $results_outdir/$errname
+myrc=$?
+
+grep exception $results_outdir/$errname
+if [ $? -eq 0 ]; then
+    exit 1
+fi
+
+if [ $refrc -ne 0 ] || [ $myrc -ne 0 ] ; then
+    exit 1
+fi
+
+
+grep ERROR $results_refdir/$outname > $results_refdir/$outname.errortokens
+refrc=$?
+grep ERROR $results_outdir/$outname > $results_outdir/$outname.errortokens
+myrc=$?
+if [ $myrc -ne $refrc ] ; then
+    diff $results_refdir/$outname.errortokens $results_outdir/$outname.errortokens
+    exit 1
+elif [ $myrc -eq 1 ] ; then
+    exit 0
+fi
+
+diff $results_refdir/$outname.errortokens $results_outdir/$outname.errortokens
+
+if [ $? -eq 0 ] ; then
+    exit 0
+fi
+
+# remove line numbers, the ref compiler gets confused with non-terminated strings
+
+sed "s/^[\t ]*#[0-9][0-9]*//" < $results_refdir/$outname.errortokens > $results_refdir/$outname.errortokens.filtered
+sed "s/^[\t ]*#[0-9][0-9]*//" < $results_outdir/$outname.errortokens > $results_outdir/$outname.errortokens.filtered
+
+diff $results_refdir/$outname.errortokens.filtered $results_outdir/$outname.errortokens.filtered

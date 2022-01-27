@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# arguments: $BUILD_DIR $SRC_DIR $component
+
+BUILD_DIR=$1
+SRC_DIR=$2
+component=$3
+
+cd $BUILD_DIR; buildme $component

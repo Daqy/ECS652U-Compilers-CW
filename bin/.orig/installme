@@ -1,0 +1,11 @@
+#!/bin/bash
+
+components="lexer parser semant cgen coolc coolspim"
+
+for component in $components
+do
+    #echo ln -svf runme $component
+    echo ln -svf .i686/$component .x86_64/$component
+done
+
+exit 

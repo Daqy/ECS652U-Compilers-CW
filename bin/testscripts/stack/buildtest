@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# arguments: $BUILD_DIR $SRC_DIR
+
+BUILD_DIR=$1
+SRC_DIR=$2/../assignments/pa0
+
+coolc -o $BUILD_DIR/stack.s $SRC_DIR/stack.cl $SRC_DIR/atoi.cl

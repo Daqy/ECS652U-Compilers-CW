@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# $testfile $results_outdir $results_refdir $BUILD_DIR $REF_DIR $component
+
+testfile=$1
+results_outdir=$2
+results_refdir=$3
+BUILD_DIR=$4
+REF_DIR=$5
+component=$6
+
+# TODO: add timeouts
+
+outname=`basename $testfile`.out
+errname=`basename $testfile`.err
+filter="sed -f `which filter`"
+
+
+./refsemant $testfile >  $results_refdir/$outname 2>  $results_refdir/$errname
+refrc=$?
+./mysemant $testfile > $results_outdir/$outname  2>  $results_outdir/$errname
+myrc=$?
+
+grep exception $results_outdir/$errname
+if [ $? -eq 0 ]; then
+    exit 1
+fi
+
+diff $results_refdir/$outname $results_outdir/$outname
+outdiffrc=$?
+if [ $outdiffrc -ne 0 ] ; then
+    $filter $results_refdir/$outname > $results_refdir/$outname.filtered
+    sed -i.bak -n '$!N; /^\(.*\)\n\1$/!P; D' $results_refdir/$outname.filtered
+    $filter $results_outdir/$outname > $results_outdir/$outname.filtered
+    sed -i.bak -n '$!N; /^\(.*\)\n\1$/!P; D' $results_outdir/$outname.filtered
+    diff $results_refdir/$outname.filtered $results_outdir/$outname.filtered
+    outdiffrc=$?
+fi
+
+diff $results_refdir/$errname $results_outdir/$errname
+errdiffrc=$?
+if [ $errdiffrc -ne 0 ] ; then
+    $filter $results_refdir/$errname > $results_refdir/$errname.filtered
+    sed -i.bak '/Compilation halted due to static semantic errors./!d' $results_refdir/$errname.filtered
+    $filter $results_outdir/$errname > $results_outdir/$errname.filtered
+    sed -i.bak '/Compilation halted due to static semantic errors./!d' $results_outdir/$errname.filtered
+    diff $results_refdir/$errname.filtered $results_outdir/$errname.filtered
+    errdiffrc=$?
+fi
+
+# BSD and GNU sed expect different argumens for -i the only reasonably
+# portable invocation is `sed -i.bak`, which creates unwanted backup
+# files -- remove them
+rm $results_outdir/$outname.filtered.bak
+rm $results_refdir/$outname.filtered.bak
+rm $results_outdir/$errname.filtered.bak
+rm $results_refdir/$errname.filtered.bak
+
+if [ $refrc -eq 0 ] && [ $myrc -eq 0 ] ; then
+    if [ $errdiffrc -ne 0 ] ; then
+        exit 1
+    else
+        exit $outdiffrc
+    fi
+elif [ $refrc -ne 0 ] && [ $myrc -ne 0 ] ; then
+    exit $errdiffrc
+else
+    exit 1
+fi
+
+exit 1

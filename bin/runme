@@ -1,0 +1,4 @@
+#!/bin/bash
+
+`dirname $0`/.orig/.`uname -s`/`basename $0` $*
+

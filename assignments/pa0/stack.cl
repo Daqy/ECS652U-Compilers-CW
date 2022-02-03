@@ -5,7 +5,7 @@ class Stack inherits IO {
   element(i : String) : Stack {
     (new Element).init(i, self)
   };
-  display() : Stack {{ abort(); self; }};
+  display() : Stack { self };
   evaluate() : Stack { self };
   pop() : Stack {{ abort(); self; }};
   plus() : Stack {{ abort(); self; }};
@@ -42,7 +42,7 @@ class Element inherits Stack {
       out_string("\n");
 	    tempList <- tempList.tail();
 	  } pool;
-    self;
+    tempList;
   }};
   evaluate() : Stack {{
     tempList <- self;

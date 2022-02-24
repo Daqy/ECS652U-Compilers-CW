@@ -3,8 +3,8 @@
  */
 lexer grammar CoolLexer;
 
-/* Punctution */
 
+/* Punctution */
 DOT                 : '.';
 COMMA               : ',';
 AT                  : '@';
@@ -15,6 +15,30 @@ LBRACE              : '{' ;
 RBRACE              : '}' ;
 LPAREN              : '(' ;
 RPAREN              : ')' ;
+
+/* Keyword 
+The keywords of cool are: class, else, false, fi, if, in, inherits, isvoid, let, loop, pool, then, while,
+case, esac, new, of, not, true.
+*/
+CLASS       : 'class';
+ELSE        : 'else';
+FALSE       : 'false';
+FI          : 'fi';
+IF          : 'if';
+IN          : 'in';
+INHERITS    : 'inherits';
+ISVOID      : 'isvoid';
+LET         : 'let';
+LOOP        : 'loop';
+POOL        : 'pool';
+THEN        : 'then';
+WHILE       : 'while';
+CASE        : 'case';
+ESAC        : 'esac';
+NEW         : 'new';
+OF          : 'of';
+NOT         : 'not';
+TRUE        : 'true';
 
 /* Operators */
 
@@ -31,61 +55,37 @@ EQUAL                  : '=' ;
 ASSIGN                 : '<-';
 RIGHTARROW             : '=>';
 
-ERROR : . ;
-
 /* INT */
 fragment DIGIT      : [0-9];
 INT : DIGIT+ ;
 
 /* String */
 fragment LETTER     : [a-zA-Z];
-fragment UPPER     : [A-Z];
-fragment LOWER     : [a-z];
-ID  : LETTER (LETTER|DIGIT)*;
-
-/* Whitespace */
-WHITESPACE :(' ' | '\n' | '\r' | '\t' | '\u000B')+ -> skip;
-
-
-/* Keyword 
-The keywords of cool are: class, else, false, fi, if, in, inherits, isvoid, let, loop, pool, then, while,
-case, esac, new, of, not, true.
-*/
-CLASS       : 'class';
-ELSE        : 'else';
-FALSE       : 'False';
-FI          : 'fi';
-IF          : 'if';
-IN          : 'in';
-INHERITS    : 'inherits';
-ISVOID      : 'isvoid';
-LET         : 'let';
-LOOP        : 'loop';
-POOL        : 'pool';
-THEN        : 'then';
-WHILE       : 'while';
-CASE        : 'case';
-ESAC        : 'esac';
-NEW         : 'new';
-OF          : 'of';
-NOT         : 'not';
-TRUE        : 'True';
-
-
-
-BOOL        :(TRUE|FALSE);
 
 /* OBJECT * TYPE ID
  Type identifiers begin with a capital letter; object identifiers
 begin with a lower case letter.
  */
-OBJECT      :(LOWER)(LETTER);
-TYPE        :(UPPER)(LETTER);
-
+fragment IDENTIFIER  : [a-zA-Z0-9_];
+ID        : [a-z] IDENTIFIER* ;
+TYPE        : [A-Z] IDENTIFIER* ;
 
 /* Escape characters */
-
+BOOL        :(TRUE|FALSE);
 /* Line comment */
-COMMENT : '/*' .*? '*/' -> skip;
+
 
 /* Block comment */
+// Escape : (' ' | '\n' | '\r' | '\t' | '\u000B')+ -> skip;
+
+
+
+NEWLINE : ('\n'|'\r') -> skip;
+WHITESPACE  : [\t\b\f\r\n ] -> skip;
+
+UNTERIMATEDERROR : '"'(.)*? [\n]'"' {System.out.println("Unterminated string constant");};
+STRING : '"' (.)*? '"';
+COMMENT : '--' (.)*? ('\n') -> skip;
+BLOCKCOMMENT : '(*' (.|WHITESPACE)*? '*)' -> skip;
+
+ERROR : . ;

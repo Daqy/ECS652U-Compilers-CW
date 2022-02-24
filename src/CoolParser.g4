@@ -18,7 +18,7 @@ feature : ID LPAREN (formal (COMMA formal)*)? RPAREN COLON TYPE LBRACE expr RBRA
 formal  : ID COLON TYPE;
 
 expr    : ID ASSIGN expr
-        | expr (AT TYPE)? DOT ID LPAREN (expr (COMMA expr)*)? RPARENT
+        | expr (AT TYPE)? DOT ID LPAREN (expr (COMMA expr)*)? RPAREN
         | ID LPAREN (expr (COMMA expr)*)?
         | IF expr THEN expr ELSE expr FI
         | WHILE expr LOOP expr POOL

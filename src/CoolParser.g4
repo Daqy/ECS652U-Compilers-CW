@@ -8,9 +8,9 @@ options { tokenVocab = CoolLexer; }
 
 /*  Starting point for parsing a Cool file  */
 
-program : (class_c SEMICOLON)+ EOF;
+program : (coolClass SEMICOLON)+ EOF;
 
-class_c :  CLASS TYPE (INHERITS TYPE)? LBRACE (feature SEMICOLON)* RBRACE;
+coolClass :  CLASS TYPE (INHERITS TYPE)? LBRACE (feature SEMICOLON)* RBRACE;
 
 feature : ID LPAREN (formal (COMMA formal)*)? RPAREN COLON TYPE LBRACE expr RBRACE
         | ID COLON TYPE (ASSIGN expr)?;

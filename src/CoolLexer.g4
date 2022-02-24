@@ -5,31 +5,31 @@ lexer grammar CoolLexer;
 
 /* Punctution */
 
-PERIOD              : '.';
+DOT                 : '.';
 COMMA               : ',';
 AT                  : '@';
 SEMICOLON           : ';';
 COLON               : ':';
 
-CURLY_OPEN          : '{' ;
-CURLY_CLOSE         : '}' ;
-PARENT_OPEN         : '(' ;
-PARENT_CLOSE        : ')' ;
+LBRACE              : '{' ;
+RBRACE              : '}' ;
+LPAREN              : '(' ;
+RPAREN              : ')' ;
 
 /* Operators */
 
-PLUS_OPERATOR       : '+';
-MINUS_OPERATOR      : '-';
-MULT_OPERATOR       : '*';
-DIV_OPERATOR        : '/';
+PLUS       : '+';
+MINUS      : '-';
+MULT       : '*';
+DIV        : '/';
 
-INT_COMPLEMENT_OPERATOR     : '~';
+TILDE     : '~';
 
-LESS_OPERATOR               : '<';
-LESS_EQ_OPERATOR            : '<=';
-EQ_OPERATOR                 : '=' ;
-ASSIGN_OPERATOR 	        : '<-';
-RIGHTARROW                  : '=>';
+LESSTHAN               : '<';
+LEFTARROW              : '<=';
+EQUAL                  : '=' ;
+ASSIGN                 : '<-';
+RIGHTARROW             : '=>';
 
 ERROR : . ;
 

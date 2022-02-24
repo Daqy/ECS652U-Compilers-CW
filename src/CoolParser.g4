@@ -18,7 +18,7 @@ feature : ID LPAREN (formal (COMMA formal)*)? RPAREN COLON TYPE LBRACE expr RBRA
 formal  : ID COLON TYPE;
 
 expr    : ID ASSIGN expr
-        | expr (PDISPATCH TYPE)? DOT ID LPAREN (expr (COMMA expr)*)? RPARENT
+        | expr (AT TYPE)? DOT ID LPAREN (expr (COMMA expr)*)? RPARENT
         | ID LPAREN (expr (COMMA expr)*)?
         | IF expr THEN expr ELSE expr FI
         | WHILE expr LOOP expr POOL
@@ -31,12 +31,12 @@ expr    : ID ASSIGN expr
         | expr MINUS expr
         | expr MULT expr
         | expr DIV expr
-        | SWIGGITY expr
+        | TILDE expr
         | expr LESSTHAN expr
         | expr LEFTARROW expr
         | expr EQUAL expr
         | NOT expr
-        | LPAREN expr RPARENT
+        | LPAREN expr RPAREN
         | ID
         | INT
         | STRING

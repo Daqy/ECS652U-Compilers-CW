@@ -2,7 +2,10 @@
  * Define a lexer rules for Cool
  */
 lexer grammar CoolLexer;
-
+@members {
+    StringBuilder buf;
+    int count = 0;
+}
 
 /* Punctution */
 DOT                 : '.';
@@ -20,7 +23,7 @@ RPAREN              : ')' ;
 The keywords of cool are: class, else, false, fi, if, in, inherits, isvoid, let, loop, pool, then, while,
 case, esac, new, of, not, true.
 */
-CLASS       : 'class';
+CLASS       : ('C'|'c')'lass';
 ELSE        : 'else';
 FALSE       : 'false';
 FI          : 'fi';
@@ -59,6 +62,8 @@ RIGHTARROW             : '=>';
 fragment DIGIT      : [0-9];
 INT : DIGIT+ ;
 
+FAILEDNULLSTRING : '"' .*? '\u0000' '"' {setText("String contains escaped null character."); setType(ERROR);};
+
 /* String */
 fragment LETTER     : [a-zA-Z];
 
@@ -78,14 +83,42 @@ BOOL        :(TRUE|FALSE);
 /* Block comment */
 // Escape : (' ' | '\n' | '\r' | '\t' | '\u000B')+ -> skip;
 
-
-
 NEWLINE : ('\n'|'\r') -> skip;
-WHITESPACE  : [\t\b\f\r\n ] -> skip;
+WHITESPACE  : [\t\b\f\r\n \u000B] -> skip;
+// WHITESPACE :(' ' | '\n' | '\r' | '\t' | '\u000B')+ -> skip;
+STRING_OPEN : '"' { buf = new StringBuilder(); } -> more, pushMode(STRING_MODE);
+COMMENT : '--' -> pushMode(LINECOMMENT), skip;
+// BLOCKCOMMENT : '(*' -> pushMode(BLOCKCOMMENT_MODE), skip;
+BLOCKCOMMENT : '(*' {count+=1;} -> pushMode(BLOCKCOMMENT_MODE), skip;
 
-UNTERIMATEDERROR : '"'(.)*? [\n]'"' {System.out.println("Unterminated string constant");};
-STRING : '"' (.)*? '"';
-COMMENT : '--' (.)*? ('\n') -> skip;
-BLOCKCOMMENT : '(*' (.|WHITESPACE)*? '*)' -> skip;
+UNMATCHED: '*)' {setText("Unmatched *)"); setType(ERROR); };
 
 ERROR : . ;
+
+mode LINECOMMENT;
+EOFLINE : (EOF | '\n') -> popMode;
+VALIDCOMMENT : . -> more;
+
+mode STRING_MODE;
+
+STR_CONST : '"' {if (buf.toString().length() > 1024) {setText("String constant too long"); setType(ERROR);} else {setText(('"' + buf.toString() + '"'));}} -> popMode;
+STRING_ESCAPE_SEQUENCE :
+    '\\'  (
+      'n' { buf.append('n'); } 
+      | 't' { buf.append('t'); }
+      | 'b' { buf.append('b'); }
+      | 'f' { buf.append('f'); }
+      | [0-9] { buf.append(getText().substring(2)); }
+      | . { buf.append(getText().substring(1)); }) -> more;
+
+UNTERIMANTED : [\n\r]* {setText("Unterminated string constant"); setType(ERROR);} -> popMode;
+EOFSTRING : (EOF) {setText("EOF in string constant"); setType(ERROR);} -> popMode;
+STRING_VALID_CHAR : . { buf.append(getText()); } -> more;
+
+mode BLOCKCOMMENT_MODE;
+
+EOFCOMMENT: .(EOF) {setText("EOF in comment"); setType(ERROR);} -> popMode;
+STARTCOMMENT : '(*' {count+=1;} -> pushMode(BLOCKCOMMENT_MODE), skip;
+ENDCOMMENT : '*)' {count-=1;} -> popMode, skip;
+CORRECTBLOCKCOMMENT : . -> skip;
+EOFBRACKET: '*)' (EOF) {count -=1; if (count>0) {setText("EOF in comment"); setType(ERROR);} else {skip();}} -> popMode;

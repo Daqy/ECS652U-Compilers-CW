@@ -62,8 +62,9 @@ RIGHTARROW             : '=>';
 fragment DIGIT      : [0-9];
 INT : DIGIT+ ;
 
-FAILEDNULLSTRING : '"' .*? '\u0000' '"' {setText("String contains escaped null character."); setType(ERROR);};
-
+FAILEDESNULLSTRING : '"' .*? '\\''\u0000' .*? '"' {setText("String contains escaped null character."); setType(ERROR);};
+FAILEDNULLSTRING : '"' .*? '\u0000' .*? '"' {setText("String contains null character."); setType(ERROR);};
+// NULLSTRING:  ('->''\u0000') {setText("String contains escaped null character."); setType(ERROR);};
 /* String */
 fragment LETTER     : [a-zA-Z];
 
@@ -108,10 +109,12 @@ STRING_ESCAPE_SEQUENCE :
       | 't' { buf.append('t'); }
       | 'b' { buf.append('b'); }
       | 'f' { buf.append('f'); }
+      | 'r' { buf.append("015"); }
       | [0-9] { buf.append(getText().substring(2)); }
       | . { buf.append(getText().substring(1)); }) -> more;
 
-UNTERIMANTED : [\n\r]* {setText("Unterminated string constant"); setType(ERROR);} -> popMode;
+NULL_STRING : [\u0000] {setText("String contains null character."); setType(ERROR);} -> popMode;
+UNTERIMANTED : [\n]* {setText("Unterminated string constant"); setType(ERROR);} -> popMode;
 EOFSTRING : (EOF) {setText("EOF in string constant"); setType(ERROR);} -> popMode;
 STRING_VALID_CHAR : . { buf.append(getText()); } -> more;
 

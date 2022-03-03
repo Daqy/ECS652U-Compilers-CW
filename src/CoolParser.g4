@@ -5,42 +5,47 @@ parser grammar CoolParser;
 
 options { tokenVocab = CoolLexer; }
 
-
 /*  Starting point for parsing a Cool file  */
 
 program : (coolClass SEMICOLON)+ EOF;
 
-coolClass :  CLASS TYPE (INHERITS TYPE)? LBRACE (feature SEMICOLON)* RBRACE;
+coolClass : CLASS TYPE (INHERITS TYPE)? LBRACE (feature SEMICOLON)* RBRACE;
 
-feature : ID LPAREN (formal (COMMA formal)*)? RPAREN COLON TYPE LBRACE expr RBRACE
-        | ID COLON TYPE (ASSIGN expr)?;
+feature : method | attribute;
+
+method : ID LPAREN (formal (COMMA formal)*)? RPAREN COLON TYPE LBRACE expr RBRACE;
+
+attribute : ID COLON TYPE (ASSIGN expr)?;
 
 formal  : ID COLON TYPE;
 
-expr    : ID ASSIGN expr
-        | expr (AT TYPE)? DOT ID LPAREN (expr (COMMA expr)*)? RPAREN
-        | ID LPAREN (expr (COMMA expr)*)?
-        | IF expr THEN expr ELSE expr FI
-        | WHILE expr LOOP expr POOL
-        | LBRACE (expr SEMICOLON)+ RBRACE
-        | LET ID COLON TYPE (ASSIGN expr)? (COMMA ID COLON TYPE (ASSIGN expr )?)* IN expr
-        | CASE expr OF (ID COLON TYPE RIGHTARROW expr SEMICOLON )+ ESAC
-        | NEW TYPE
-        | ISVOID expr
-        | expr PLUS expr
-        | expr MINUS expr
-        | expr MULT expr
-        | expr DIV expr
-        | TILDE expr
-        | expr LESSTHAN expr
-        | expr LEFTARROW expr
-        | expr EQUAL expr
-        | NOT expr
-        | LPAREN expr RPAREN
-        | ID
-        | INT
-        | STRING
-        | BOOL;
+expr    : ID ASSIGN expr #assignmentExpression
+        | expr DOT ID LPAREN (expr (COMMA expr)*)? RPAREN #atDynamicExpression
+        | expr AT TYPE DOT ID LPAREN (expr (COMMA expr)*)? RPAREN #atStaticExpression
+        | ID LPAREN (expr (COMMA expr)*)? RPAREN #idBraceExpression
+        | IF expr THEN expr ELSE expr FI #condExpression
+        | WHILE expr LOOP expr POOL #whileExpression
+        | LBRACE (expr SEMICOLON)+ RBRACE #blockExpression
+        | LET ID COLON TYPE (ASSIGN expr)? (COMMA ID COLON TYPE (ASSIGN expr )?)* IN expr #letExpression
+        | CASE expr OF specialCase+ ESAC #caseExpression
+        | NEW TYPE #newExpression
+        | ISVOID expr #voidExpression
+        | expr PLUS expr #plusExpression
+        | expr MINUS expr #minusExpression
+        | expr MULT expr #multiplyExpression
+        | expr DIV expr #divideExpression
+        | TILDE expr #tildeExpression
+        | expr LESSTHAN expr #lessThanExpression
+        | expr LEFTARROW expr #leftArrowExpression
+        | expr EQUAL expr #equalExpression
+        | NOT expr #notExpression
+        | LPAREN expr RPAREN #bracketExpression
+        | ID #idExpression
+        | INT #integerExpression
+        | STR_CONST #stringExpression
+        | BOOL #booleanExpression;
+
+specialCase : ID COLON TYPE RIGHTARROW expr SEMICOLON;
 
 // program ::= [class; ]+
 // class ::= class TYPE [inherits TYPE] { [feature; ]∗ } 

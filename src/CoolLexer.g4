@@ -23,7 +23,7 @@ RPAREN              : ')' ;
 The keywords of cool are: class, else, false, fi, if, in, inherits, isvoid, let, loop, pool, then, while,
 case, esac, new, of, not, true.
 */
-CLASS       : 'class';
+CLASS       : ('c'|'C') ('l'|'L') ('a'|'A') ('s'|'S') ('s'|'S') ;
 ELSE        : 'else';
 FI          : 'fi';
 IF          : 'if';

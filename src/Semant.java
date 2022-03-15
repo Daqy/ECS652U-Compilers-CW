@@ -17,6 +17,9 @@ class Semant {
         if (Utilities.errors()) {
             Utilities.fatalError(Utilities.ErrorCode.ERROR_SEMANT);
         }
+        /* Assume we do not have to do anything here for now, 
+        work on ScopeCheckingVisitor.Java and TypeCheckingVisitor.java,
+        also we need to finish ClassTable.java for inheritance stuff. */
     }
 
 }

@@ -189,11 +189,19 @@ class ClassTable {
 	/* Do somethind with Object_class, IO_class, Int_class,
            Bool_class, and Str_class here */
 
+// We for loop, add into
+    Semant.symtable.enterScope();
+    
+    Semant.symtable.addId(Object_class.getName(), new Hashmap<Symbol, ClassNode>(TreeConstants.No_class, Object_class));
+    for (MethodNode _mnode : Object_class.getFeatures()) {
+      Semant.symtable.addId(_mnode.getName(), new Hashmap<Symbol, ClassNode>(_mnode.getReturn_type, Object_class));
     }
+        
 
-    public ClassTable(List<ClassNode> cls) {
-    	/* fill this in */
-    }
+  }
+
+  public ClassTable(List<ClassNode> cls) {
+          // 
+  }
 }
 
-    

@@ -2,7 +2,7 @@ import ast.*;
 
 import java.util.LinkedList;
 import java.util.List;
-
+import java.util.HashMap;
 
 /**
  * This class may be used to contain the semantic information such as
@@ -189,19 +189,57 @@ class ClassTable {
 	/* Do somethind with Object_class, IO_class, Int_class,
            Bool_class, and Str_class here */
 
-// We for loop, add into
+    // We for loop, add into
     Semant.symtable.enterScope();
-    
-    Semant.symtable.addId(Object_class.getName(), new Hashmap<Symbol, ClassNode>(TreeConstants.No_class, Object_class));
-    for (MethodNode _mnode : Object_class.getFeatures()) {
-      Semant.symtable.addId(_mnode.getName(), new Hashmap<Symbol, ClassNode>(_mnode.getReturn_type, Object_class));
-    }
-        
 
+    Semant.symtable.addId(Object_class.getName(), new HashMap<Symbol, ClassNode>() {{put(TreeConstants.No_class, Object_class);}});
+    for (FeatureNode _fnode : Object_class.getFeatures()) {
+      if (_fnode instanceof MethodNode) {
+        MethodNode _mnode = (MethodNode) _fnode;
+        Semant.symtable.addId(_mnode.getName(), new HashMap<Symbol, ClassNode>() {{put(_mnode.getReturn_type(), Object_class);}});
+      }
+    }
+    Semant.symtable.enterScope();
+
+    ClassNode[] listOfClassNodes = {IO_class, Int_class, Bool_class, Str_class};
+
+    for (int index = 0; index < listOfClassNodes.length; index++) {
+      ClassNode _node = listOfClassNodes[index];
+      Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getParent(), _node);}});
+      for (FeatureNode _fnode : _node.getFeatures()) {
+        if(_fnode instanceof MethodNode){
+          MethodNode _mnode = (MethodNode) _fnode;
+          Semant.symtable.addId(_mnode.getName(), new HashMap<Symbol, ClassNode>() {{put(_mnode.getReturn_type(), _node);}});
+        }
+      }
+    }
   }
 
   public ClassTable(List<ClassNode> cls) {
-          // 
+    /* for inheritance, check for redefinition, cannot inherit from class, and undefined class names,
+      also check cool manual & slides for any other problems we need to look in for inheritance
+    */
+    installBasicClasses();
+    Semant.symtable.enterScope();
+
+    for (ClassNode _cnode : cls) {
+      Semant.symtable.addId(_cnode.getName(), _cnode.getParent());
+    }
+
+    for (ClassNode _cnode : cls) {
+      if (_cnode.getName() == TreeConstants.Object_ || _cnode.getName() == TreeConstants.Int || _cnode.getName() == TreeConstants.Str || _cnode.getName() == TreeConstants.SELF_TYPE || _cnode.getName() == TreeConstants.IO) {
+        Utilities.semantError(_cnode.getFilename(), _cnode);
+        System.out.println("Redefinition of basic class " + _cnode.getName() + ".");
+      } else if (_cnode.getParent() == TreeConstants.Int || _cnode.getParent() == TreeConstants.Bool || _cnode.getParent() == TreeConstants.Str || _cnode.getParent() == TreeConstants.Main) {
+        Utilities.semantError(_cnode.getFilename(), _cnode);
+        System.out.println("Class " + _cnode.getName() + " cannot inherit class " + _cnode.getParent() + ".");
+      } else if (Semant.symtable.lookup(_cnode.getParent()) == null) {
+        Utilities.semantError(_cnode.getFilename(), _cnode);
+        System.out.println("Class " + _cnode.getName()+ " inherits from an undefined class " + _cnode.getParent() + ".");
+      }
+    }
+
+    Semant.symtable.exitScope();
   }
 }
 

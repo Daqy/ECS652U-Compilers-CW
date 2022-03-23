@@ -32,7 +32,6 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
     };
 
     public Object visit(MethodNode _node, Object data) {
-        Semant.symtable.enterScope();
         if (Semant.symtable.lookup(_node.getReturn_type()) == null && _node.getReturn_type() != TreeConstants.SELF_TYPE) {
             Utilities.semantError(filename, _node).println("Undefined return type " + _node.getReturn_type() + " in method " + _node.getName() + ".");
             for (FormalNode node : _node.getFormals()) {
@@ -41,7 +40,6 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
             }
             Semant.symtable.addId(_node.getName(), _node);
             _node.getExpr().accept(this, data);
-            Semant.symtable.exitScope();
             return null;
         }
 
@@ -58,7 +56,6 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         if (_node.getExpr().getType() != _node.getReturn_type() && _node.getReturn_type() != TreeConstants.Object_) {
             Utilities.semantError(filename, _node).println("Inferred return type " + _node.getExpr().getType() + " of method " + _node.getName() + " does not conform to declared return type " + _node.getReturn_type() + ".");
         }
-        Semant.symtable.exitScope();
         return null;
     }
 
@@ -85,7 +82,18 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         }
         return null;
     }
-
+    public Object visit(StaticDispatchNode _node, Object data) {
+        _node.getExpr().accept(this, data);
+        for (ExpressionNode node : _node.getActuals()) {
+            node.accept(this, data);
+        }
+        if(Semant.symtable.probe(_node.getName()) != null){
+            if(_node.getType_name() == Semant.symtable.lookup(_node.getExpr().getType())){
+                //System.out.println("test");
+            }
+        }
+        return null;
+    }
     public Object visit(DispatchNode _node, Object data) {
         _node.getExpr().accept(this, data);
         for (ExpressionNode node : _node.getActuals()) {
@@ -97,13 +105,16 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
 
         // System.out.println(_node.getActuals());
         // System.out.println("==========================");
-        // System.out.println(_node);
+        System.out.println(_node.getName());
         // System.out.println(_node.getExpr().getType());
         // System.out.println(((MethodNode) Semant.symtable.probe(_node.getName())).getReturn_type());
         if (Semant.symtable.probe(_node.getName()) != null) {
             for(FeatureNode fnode : classMap.get(currentClassNodeName).getFeatures()){
                 if (fnode instanceof MethodNode){
                     MethodNode mnode = (MethodNode) fnode;
+                    if(mnode.getName() != _node.getName()){
+                        Utilities.semantError(filename, _node).println("Dispatch to undefined method " + _node.getName()+".");
+                    }
                     int index = 0;
                     if (mnode.getFormals().size() > 0) {
                         for(ExpressionNode node : _node.getActuals()) {
@@ -114,15 +125,13 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
                                         Utilities.semantError(filename, _node).println("In call of method " + _node.getName() + " type " + ((MethodNode) Semant.symtable.probe(tmp.getName())).getReturn_type() + " of parameter " + mnode.getFormals().get(index).getName() + " does not conform to declared type " + mnode.getFormals().get(index).getType_decl() +".");
                                     }
                                 }
+                               
                             }
-
                             index++;
                         }
                     }
                 }
-                
             }
-
 
             if(((MethodNode) Semant.symtable.lookup(_node.getName())).getReturn_type() == TreeConstants.SELF_TYPE) {
                 _node.setType(TreeConstants.SELF_TYPE);
@@ -131,7 +140,14 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         if (_node.getExpr().getType() == TreeConstants.SELF_TYPE) {
             _node.setType(TreeConstants.SELF_TYPE);
         } else {
-            _node.setType(((MethodNode) Semant.symtable.lookup(_node.getName())).getReturn_type());
+            if((((MethodNode) Semant.symtable.lookup(_node.getName())).getReturn_type()) != null){
+                _node.setType(((MethodNode) Semant.symtable.lookup(_node.getName())).getReturn_type());
+                System.out.println(Semant.symtable.toString());
+            } else {  // nvm didnt work
+            
+                Utilities.semantError(filename, _node).println("Undeclared identifier "+ _node.getName() );
+                
+            } // can we add it to the classmap or smthin / add what? / either way its fixed now (made the scope better)
         }
         return null;
     } //condNode
@@ -174,16 +190,26 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
     }
 
     public Object visit(ObjectNode _node, Object data) {
+        
         if (_node.getName() == TreeConstants.self) {
             _node.setType(TreeConstants.SELF_TYPE);
         } else if (Semant.symtable.probe(_node.getName()) != null) {
-            _node.setType((Symbol) Semant.symtable.probe(_node.getName()));
+            // System.out.println(Semant.symtable.probe(_node.getName()));
+            try {
+                _node.setType((Symbol) Semant.symtable.probe(_node.getName()));
+            } catch(Exception e) {
+                _node.setType((Symbol) ((HashMap) Semant.symtable.probe(_node.getName())).keySet().toArray()[0]);
+            }
         }
         else if (Semant.symtable.lookup(_node.getName()) != null) {
-            _node.setType((Symbol) ((HashMap) Semant.symtable.lookup(_node.getName())).keySet().toArray()[0]);
-        } else {
-            Utilities.semantError(filename, _node).println("Undeclared identifier " + _node.getName() + ".");
+            if (classMap.get(currentClassNodeName).getName() != Semant.symtable.lookup(_node.getName())){
+                if(classMap.get(currentClassNodeName).getParent().getName() != Semant.symtable.lookup(_node.getName())){
+                    Utilities.semantError(filename, _node).println("Undeclared identifier " + _node.getName() + ".");
+                }
+            }
+            _node.setType((Symbol) Semant.symtable.lookup(_node.getName()));
         }
+        
         return null;
     }
 
@@ -193,10 +219,17 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         }
         _node.getExpr().accept(this, data);
 
-
         if(Semant.symtable.lookup(_node.getName()) != null) {
             _node.setType(_node.getExpr().getType());
-            Symbol nodeType = (Symbol) ((HashMap) Semant.symtable.lookup(_node.getName())).keySet().toArray()[0];
+            // System.out.println(Semant.symtable.toString());
+            // System.out.println(Semant.symtable.lookup(_node.getName()).getClass());
+            Symbol nodeType;
+            try {
+                nodeType = (Symbol) Semant.symtable.lookup(_node.getName());
+            } catch(Exception e) {
+                nodeType = (Symbol) ((HashMap) Semant.symtable.lookup(_node.getName())).keySet().toArray()[0];
+            }
+             // This does not work.
             if (nodeType != _node.getExpr().getType()) {
                 Utilities.semantError(filename, _node).println("Type " + _node.getExpr().getType() + " of assigned expression does not conform to declared type " + nodeType + " of identifier " + _node.getName() +".");
             }
@@ -219,6 +252,16 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         return null;
     }
 
+    public Object visit(BlockNode _node, Object data) {
+        Semant.symtable.enterScope();
+        for (ExpressionNode node : _node.getExprs()){
+            node.accept(this, data);
+        }
+        _node.setType(_node.getExprs().get(_node.getExprs().size()-1).getType());
+        Semant.symtable.exitScope();
+        return null;
+    }
+
     public Object visit(IntBinopNode _node, Object data) {
         if (!(_node.getE1().getType() == TreeConstants.Int && _node.getE1().getType() == _node.getE2().getType())) {
             Utilities.semantError(filename, _node).println("non-Int arguments:" + _node.getE1().getType() + " + " + _node.getE2().getType());
@@ -233,9 +276,13 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
     }
 
     public Object visit(NewNode _node, Object data) {
-        if (_node.getType_name() != TreeConstants.SELF_TYPE){
-            Utilities.semantError(filename, _node).println("'new' used with undefined class " + _node.getType_name());
+        if (Semant.symtable.lookup(_node.getType_name()) == null){
+            //check that new node doesnt exist first
+            if (_node.getType_name() != TreeConstants.SELF_TYPE){
+                Utilities.semantError(filename, _node).println("'new' used with undefined class " + _node.getType_name());
+            }
         }
+
         _node.setType(_node.getType_name());
         return null;
     }
@@ -249,7 +296,13 @@ public class TypeCheckingVisitor extends BaseVisitor<Object, Object> {
         _node.getBody().accept(this, data);
 
         if(Semant.symtable.lookup(_node.getInit().getType()) != null) {
-            if (Semant.symtable.lookup(_node.getType_decl()) == _node.getInit().getType() && _node.getType_decl() != _node.getInit().getType()){
+            Symbol nodeType;
+            try {
+                nodeType = (Symbol) Semant.symtable.lookup(_node.getType_decl());
+            } catch(Exception e) {
+                nodeType = (Symbol) ((HashMap) Semant.symtable.lookup(_node.getType_decl())).keySet().toArray()[0];
+            }
+            if (nodeType == _node.getInit().getType() && _node.getType_decl() != _node.getInit().getType()){
                 Utilities.semantError(filename, _node).println("Inferred type " +  _node.getInit().getType() + " of initialization of " + _node.getIdentifier() + " does not conform to identifier's declared type " + _node.getType_decl() + "." );
             }
         }

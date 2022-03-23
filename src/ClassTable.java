@@ -228,18 +228,15 @@ class ClassTable {
 
     for (ClassNode _cnode : cls) {
       if (_cnode.getName() == TreeConstants.Object_ || _cnode.getName() == TreeConstants.Int || _cnode.getName() == TreeConstants.Str || _cnode.getName() == TreeConstants.SELF_TYPE || _cnode.getName() == TreeConstants.IO) {
-        Utilities.semantError(_cnode.getFilename(), _cnode);
-        System.out.println("Redefinition of basic class " + _cnode.getName() + ".");
-      } else if (_cnode.getParent() == TreeConstants.Int || _cnode.getParent() == TreeConstants.Bool || _cnode.getParent() == TreeConstants.Str || _cnode.getParent() == TreeConstants.Main) {
-        Utilities.semantError(_cnode.getFilename(), _cnode);
-        System.out.println("Class " + _cnode.getName() + " cannot inherit class " + _cnode.getParent() + ".");
+        Utilities.semantError(_cnode.getFilename(), _cnode).println("Redefinition of basic class " + _cnode.getName() + ".");
+      } else if (_cnode.getParent() == TreeConstants.Int || _cnode.getParent() == TreeConstants.Bool || _cnode.getParent() == TreeConstants.Str || _cnode.getParent() == TreeConstants.Main || _cnode.getParent() == TreeConstants.SELF_TYPE) {
+        Utilities.semantError(_cnode.getFilename(), _cnode).println("Class " + _cnode.getName() + " cannot inherit class " + _cnode.getParent() + ".");
       } else if (Semant.symtable.lookup(_cnode.getParent()) == null) {
-        Utilities.semantError(_cnode.getFilename(), _cnode);
-        System.out.println("Class " + _cnode.getName()+ " inherits from an undefined class " + _cnode.getParent() + ".");
+        Utilities.semantError(_cnode.getFilename(), _cnode).println("Class " + _cnode.getName() + " inherits from an undefined class " + _cnode.getParent() + ".");
       }
     }
+    // System.out.println(Semant.symtable.toString());
 
-    Semant.symtable.exitScope();
   }
 }
 

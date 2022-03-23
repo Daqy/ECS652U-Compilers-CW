@@ -17,16 +17,18 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
         for (ClassNode node : _node.getClasses()) {
             node.accept(this, data); 
         }
-        if(!(Semant.symtable.lookup(TreeConstants.Main) != null)){
+        if(Semant.symtable.lookup(TreeConstants.Main) == null) {
             Utilities.semantError(filename, _node).println("Class Main is not defined");
         }
         return null;
     };
     public Object visit(ClassNode _node, Object data) {
         filename = _node.getFilename();
-        Semant.symtable.enterScope();
         classMap.put(_node.getName(), _node);
         currentClassNodeName = _node.getName();
+
+        Semant.symtable.enterScope();
+
         if((Semant.symtable.probe(_node.getName()) != null)){
             Utilities.semantError(filename, _node).println("Class " + _node.getName() + " was previously defined.");
         } else {
@@ -39,9 +41,10 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
     }
     public Object visit(MethodNode _node, Object data) {
         Semant.symtable.enterScope();
-        
+        boolean added = false;
         if (Semant.symtable.lookup(_node.getName()) == null) {
             Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getReturn_type(), classMap.get(currentClassNodeName));}});
+            added = true;
         } else {
             ClassNode methodNameExistInScope = (ClassNode) ((HashMap) Semant.symtable.lookup(_node.getName())).values().toArray()[0];
             if (classMap.get(currentClassNodeName).getParent() == methodNameExistInScope.getName()){
@@ -68,7 +71,9 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
             node.accept(this, data);
             Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getReturn_type(), classMap.get(currentClassNodeName));}});
         }
-        Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getReturn_type(), classMap.get(currentClassNodeName));}});
+        if (!added) {
+            Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getReturn_type(), classMap.get(currentClassNodeName));}});
+        }
         _node.getExpr().accept(this, data);
         return null;
     }
@@ -94,6 +99,7 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
         Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getType_decl(), classMap.get(currentClassNodeName));}});
         return null;
     }
+
     public Object visit(ObjectNode _node, Object data) {
         if (Semant.symtable.lookup(_node.getName()) != null) {
             if (classMap.get(currentClassNodeName) != (ClassNode) ((HashMap) Semant.symtable.lookup(_node.getName())).values().toArray()[0]) {
@@ -108,10 +114,14 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
         }
         return null;
     }
+
     public Object visit(LetNode _node, Object data) {
         Semant.symtable.enterScope();
+
         if (_node.getIdentifier() != TreeConstants.self) {
             Semant.symtable.addId(_node.getIdentifier(), new HashMap<Symbol, ClassNode>() {{put(_node.getType_decl(), classMap.get(currentClassNodeName));}});
+        } else {
+            Utilities.semantError(filename, _node).println("'self' cannot be bound in a 'let' expression.");
         }
         _node.getInit().accept(this, data);
         _node.getBody().accept(this, data);
@@ -120,4 +130,38 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
         return null;
     }
 
+    public Object visit(BranchNode _node, Object data) {
+        if (Semant.symtable.probe(_node.getType_decl()) == null && _node.getType_decl() != null) {
+            Semant.symtable.addId(_node.getType_decl(), new HashMap<Symbol, ClassNode>() {{put(_node.getType_decl(), classMap.get(currentClassNodeName));}});
+        } else {
+            Utilities.semantError(filename, _node).println("Duplicate branch " + _node.getType_decl() + " in case statement.");
+        }
+        _node.getExpr().accept(this, data);
+        return null;
+    }
+
+    public Object visit(LoopNode _node, Object data) {
+        Semant.symtable.enterScope();
+        _node.getCond().accept(this, data);
+        _node.getBody().accept(this, data);
+        return null;
+    }
+
+    public Object visit(CaseNode _node, Object data) {
+        Semant.symtable.enterScope();
+        _node.getExpr().accept(this, data);
+        for (BranchNode node : _node.getCases()) {
+            node.accept(this, data);
+        }
+        Semant.symtable.exitScope();
+        return null;
+    }
+    public Object visit(BlockNode _node, Object data) {
+         Semant.symtable.enterScope();
+        for (ExpressionNode node : _node.getExprs()) {
+            node.accept(this, data);
+        }
+        Semant.symtable.exitScope();
+        return null;
+    }
 }

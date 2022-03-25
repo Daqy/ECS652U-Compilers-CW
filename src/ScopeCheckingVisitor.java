@@ -26,21 +26,21 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
         filename = _node.getFilename();
         classMap.put(_node.getName(), _node);
         currentClassNodeName = _node.getName();
-
+        for (FeatureNode node : _node.getFeatures()) {
+            node.accept(this, data);
+        }
         Semant.symtable.enterScope();
 
-        if((Semant.symtable.probe(_node.getName()) != null)){
+        if((Semant.symtable.lookup(_node.getName()) != null)){
             Utilities.semantError(filename, _node).println("Class " + _node.getName() + " was previously defined.");
         } else {
             Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getParent(), _node);}});
-        }
-        for (FeatureNode node : _node.getFeatures()) {
-            node.accept(this, data);
         }
         return null;
     }
     public Object visit(MethodNode _node, Object data) {
         Semant.symtable.enterScope();
+        Semant.symtable.addId(TreeConstants.InMethodNode_, _node);
         boolean added = false;
         if (Semant.symtable.lookup(_node.getName()) == null) {
             Semant.symtable.addId(_node.getName(), new HashMap<Symbol, ClassNode>() {{put(_node.getReturn_type(), classMap.get(currentClassNodeName));}});
@@ -102,14 +102,16 @@ public class ScopeCheckingVisitor extends BaseVisitor<Object, Object> {
 
     public Object visit(ObjectNode _node, Object data) {
         if (Semant.symtable.lookup(_node.getName()) != null) {
-            if (classMap.get(currentClassNodeName) != (ClassNode) ((HashMap) Semant.symtable.lookup(_node.getName())).values().toArray()[0]) {
-                if(classMap.get(currentClassNodeName).getParent() != Semant.symtable.lookup(_node.getName())){
+            if (currentClassNodeName != ((ClassNode) ((HashMap) Semant.symtable.lookup(_node.getName())).values().toArray()[0]).getName()) {
+                if(classMap.get(currentClassNodeName).getParent() != ((ClassNode) ((HashMap) Semant.symtable.lookup(_node.getName())).values().toArray()[0]).getName()) {
                     Utilities.semantError(filename, _node).println("Undeclared identifier " + _node.getName() + ".");
                 }
             }
         } else {
             if (_node.getName() != TreeConstants.self) {
-                Utilities.semantError(filename, _node).println("Undeclared identifier " + _node.getName() + ".");
+                if (Semant.symtable.probe(TreeConstants.InMethodNode_) != null) {
+                    Utilities.semantError(filename, _node).println("Undeclared identifier " + _node.getName() + ".");
+                }
             }
         }
         return null;

@@ -235,6 +235,7 @@ class ClassTable {
         Utilities.semantError(_cnode.getFilename(), _cnode).println("Class " + _cnode.getName() + " inherits from an undefined class " + _cnode.getParent() + ".");
       }
     }
+    Semant.symtable.exitScope();
     // System.out.println(Semant.symtable.toString());
 
   }

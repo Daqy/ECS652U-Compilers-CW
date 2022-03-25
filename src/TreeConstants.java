@@ -83,7 +83,10 @@ class TreeConstants {
 
     public static final Symbol type_name =
             StringTable.idtable.addString("type_name");
-
+    
     public static final Symbol val =
             StringTable.idtable.addString("_val");
+
+    public static final Symbol InMethodNode_ =
+            StringTable.idtable.addString("InMethodNode");
 }

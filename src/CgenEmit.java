@@ -1,6 +1,7 @@
 
 import ast.Symbol;
-
+import ast.*;
+import java.beans.Expression;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -936,6 +937,14 @@ public class CgenEmit  {
         s.print(CgenConstants.WORD);
     }
 
+    protected void emitWordforDispatchNode(Symbol methodParent, Symbol method) {
+        emitWord();
+        s.print(methodParent + ".");
+        s.println(method);
+    }
+    protected void emitNode(ExpressionNode e1 ) {
+        s.print(e1 + ".");
+    }
 
     protected void prologue(int temps)
     {

@@ -70,7 +70,7 @@ final class CgenConstants {
     final static String SP = "$sp";        // Stack pointer
     final static String FP = "$fp";        // Frame pointer
     final static String RA = "$ra";        // Return address
-
+    final static String S1 = "$s1";
     //
     // General-purpose registers for use by the register allocator:
     //

@@ -942,10 +942,6 @@ public class CgenEmit  {
         s.print(methodParent + ".");
         s.println(method);
     }
-    protected void emitNode(ExpressionNode e1 ) {
-        s.print(e1 + ".");
-    }
-
     protected void prologue(int temps)
     {
         int reg_temps = CgenConstants.getRegisterTemps(temps);

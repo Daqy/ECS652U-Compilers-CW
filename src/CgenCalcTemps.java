@@ -44,6 +44,12 @@ public class CgenCalcTemps extends BaseVisitor<Void, Void> {
     @Override
     public Void visit(BinopNode node, Void data) {
         /* TODO */
+        node.getE1().accept(this, null);
+        inc();
+        dec();
+        node.getE2().accept(this, null);
+        inc();
+        dec();
         return null;
     }
 
@@ -61,6 +67,9 @@ public class CgenCalcTemps extends BaseVisitor<Void, Void> {
     @Override
     public Void visit(BranchNode node, Void data) {
         /* TODO */
+        inc();
+        node.getExpr().accept(this, null);
+        dec();
         return null;
     }
 

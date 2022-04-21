@@ -113,13 +113,34 @@ public class Cgen  {
 
         @Override
         public String emitRef(String optionalDest) {
+            // System.out.println(this.offset);
             /* TODO */
-            return null;
+            // emitter.emitLoad(optionalDest, CgenConstants.DEFAULT_OBJFIELDS, CgenConstants.SELF);
+            String reg = CgenConstants.getRegister(offset);
+            if (reg != null)
+            {
+                if (Flags.cgen_debug) System.err.println("     Local read from register "+ reg );
+                return reg;
+            } else {
+                if (Flags.cgen_debug) System.err.println("     Local load from FP offset "+ offset );
+                emitter.emitLoad(optionalDest, CgenConstants.DEFAULT_OBJFIELDS+this.offset, CgenConstants.SELF);
+                return optionalDest;
+            }
+            
+            // return optionalDest;
         }
 
         @Override
         public void emitUpdate(String source) {
             /* TODO */
+            String reg = CgenConstants.getRegister(offset);
+            if (reg != null) {
+                if (Flags.cgen_debug) System.err.println("     Local store to register" + reg);
+                emitter.emitMove(source, CgenConstants.SELF);
+            } else {
+                if (Flags.cgen_debug) System.err.println("     Local store to FP offset " + offset);
+                emitter.emitStore(source, CgenConstants.DEFAULT_OBJFIELDS+this.offset, CgenConstants.SELF);
+            }
         }
     }
 
